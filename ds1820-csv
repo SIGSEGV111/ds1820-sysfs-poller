@@ -1,0 +1,17 @@
+#!/bin/bash -eu
+
+readonly location="$1"
+
+for ((;;)); do
+	for f in /sys/bus/w1/devices/10-*; do
+		read -r id < "$f/name"
+		read -r mc < "$f"/hwmon/hwmon*/temp1_input
+		ts="$(date '+%s.%N')"
+		r="$ts;\"$location\";\"DS18S20\";\"temperature\";$(printf '%f' $((1000000000 * $mc/1000))e-9)" #;$id"
+
+		flock --shared 1
+		echo "$r"
+		flock --shared --unlock 1
+	done
+	sleep 15
+done
